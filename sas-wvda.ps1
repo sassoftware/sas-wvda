@@ -196,8 +196,9 @@ Set-StrictMode -Version 5.1
 #Requires -RunAsAdministrator
 #Requires -Version 5.1
 
-$myVersionNumber = "1.1.04"
-$remoteVerCheckURL = "https://github.com/sassoftware/sas-wvda/raw/master/sas-wvda.ps1"
+$myVersionNumber = "1.1.05"
+$remoteVerCheckURL = "https://raw.githubusercontent.com/sassoftware/sas-wvda/master/sas-wvda.ps1"
+$remoteVerDownloadURL = "https://github.com/sassoftware/sas-wvda"
 
 $validateRequestValid = $false
 switch ($validate.ToLower()) {
@@ -1719,7 +1720,7 @@ Write-SASUserMessage -severity "Info" -message "Executing on host: $env:computer
 if ($CheckRemoteVersion) {
     $remoteScriptVer = ((Invoke-WebRequest -Uri "$remoteVerCheckURL").Content.split([Environment]::NewLine) | Select-String 'myVersionNumber =')[0].ToString().Split('=')[1].Replace('"','').Replace(' ','')
     if ($remoteScriptVer -gt $myVersionNumber) {
-        Write-SASUserMessage -severity "alert" -message "There is a newer version of this tool available at $remoteVerCheckURL.`n      The remote version number is: $remoteScriptVer"
+        Write-SASUserMessage -severity "alert" -message "There is a newer version of this tool available at $remoteVerDownloadURL.`n      The remote version number is: $remoteScriptVer"
     } else {
         Write-SASUserMessage -severity "info" -message "There are no updates available."
     }
