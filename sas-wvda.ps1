@@ -196,7 +196,7 @@ Set-StrictMode -Version 5.1
 #Requires -RunAsAdministrator
 #Requires -Version 5.1
 
-$myVersionNumber = "1.1.06"
+$myVersionNumber = "1.1.07"
 $remoteVerCheckURL = "https://raw.githubusercontent.com/sassoftware/sas-wvda/master/sas-wvda.ps1"
 $remoteVerDownloadURL = "https://github.com/sassoftware/sas-wvda"
 
@@ -1731,9 +1731,9 @@ if ($CheckRemoteVersion) {
 }
 
 Validate-Java
+Validate-ExecutionEnvironment
 Get-AdminToolInstallStatus
 Validate-dotNETVersion
-Validate-ExecutionEnvironment
 Validate-cppRuntimePreReqs
 Set-wvdaVariables
 
