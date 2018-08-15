@@ -196,7 +196,7 @@ Set-StrictMode -Version 5.1
 #Requires -RunAsAdministrator
 #Requires -Version 5.1
 
-$myVersionNumber = "1.1.07"
+$myVersionNumber = "1.1.08"
 $remoteVerCheckURL = "https://raw.githubusercontent.com/sassoftware/sas-wvda/master/sas-wvda.ps1"
 $remoteVerDownloadURL = "https://github.com/sassoftware/sas-wvda"
 
@@ -630,8 +630,17 @@ function Validate-ExecutionEnvironment {
         Write-SASUserMessage -severity "info" -message "Running PowerShell 5.1 or higher: OK"
     } else {
         Write-SASUserMessage -severity "error" -message "PowerShell 5.1 or greater is required to run SAS Viya 3.4.`nUpdate can be obtained from https://www.microsoft.com/en-us/download/details.aspx?id=54616."
-        exit
+        exit 1
     }
+
+    # Are we a Domain user (vs. local machine user)?
+    Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+    $UserPrincipal = [System.DirectoryServices.AccountManagement.UserPrincipal]::Current
+    if($UserPrincipal.ContextType -eq "Machine") {
+        Write-SASUserMessage -severity "error" -message "You must be logged in with domain credentials to execute this script.  You are currently running under local machine credentials!"
+        exit 1
+    }
+
 
     # Are we a Domain Admin?
     $CurrentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
