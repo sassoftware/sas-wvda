@@ -9,6 +9,8 @@ To ease the installation process of SAS Viya 3.4 on Microsoft Windows Server by:
 * Validate encrypted passwords configured by SAS Admin
 * facilitate the communication process between the SAS Admin and the domain / security admin
 
+## [Download signed Binaries](zips/README.md)
+
 ## Audience
 The primary users of sas-wvda are SAS Administrators.  
 

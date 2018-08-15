@@ -196,7 +196,7 @@ Set-StrictMode -Version 5.1
 #Requires -RunAsAdministrator
 #Requires -Version 5.1
 
-$myVersionNumber = "1.1.05"
+$myVersionNumber = "1.1.06"
 $remoteVerCheckURL = "https://raw.githubusercontent.com/sassoftware/sas-wvda/master/sas-wvda.ps1"
 $remoteVerDownloadURL = "https://github.com/sassoftware/sas-wvda"
 
@@ -553,7 +553,6 @@ function Validate-SASSigningCerts {
     $differences = $thumbprints_p7b | Where { $thumbprints_lmtp -notcontains $_ }
     if ( -not ($differences -eq $null)) {
         if ($Remediate) {
-            #cmd /c  "`"$env:java_home\bin\java.exe`" -version 1>&2" 2>&1 | %{ "$_" }
             $certUtilOutput = cmd /c "`"certutil.exe`" -addstore TrustedPublisher $PSScriptRoot\SAS_Code_Signing_Certs.p7b " 2>&1
             if ($lastExitCode -eq 0) {
                 $msg = "SAS Public Cert update: OK`n      CERTUTIL output:"
@@ -1660,29 +1659,34 @@ function Set-SecurePassword {
         $cmdList += 'if ($keyTabPath -eq $null) { $keyTabPath = "http-' + $myHostName + '.keytab" }'
         $cmdList += '# If creating a keytab alone we need to pass in the existing HTTPdomainUserName thus next few lines'
         $cmdList += 'if($HTTPdomainUserName -eq $null) { $HTTPdomainUserName = "' + $HTTPdomainUserName + '" }'
-        $cmdList += 'if($HTTPPassword -eq $null) {'
-        $cmdList += '    $ktcmd = "ktpass /out " + $keyTabPath + " /mapuser " + $HTTPsamName + " /princ " + $httpSPN + "@" + $krbRealm + " /crypto all /pass +randpass /ptype KRB5_NT_PRINCIPAL /kvno 0 /mapop add"'
+        $cmdList += 'if($HTTPPassword -eq "") {'
+        $cmdList += '    $ktcmd = "ktpass /out " + $keyTabPath + " /mapuser " + $HTTPdomainUserName + " /princ " + $httpSPN + "@" + $krbRealm + " /crypto all /pass +randpass /ptype KRB5_NT_PRINCIPAL /kvno 0 /mapop add "'
         $cmdList += '} else {'
-        $cmdList += '    $ktcmd = "ktpass /out " + $keyTabPath + " /mapuser " + $HTTPsamName + " /princ " + $httpSPN + "@" + $krbRealm + " /crypto all /pass """ + $HTTPPassword + """ /ptype KRB5_NT_PRINCIPAL /kvno 0 /mapop add +setpass +setupn"'
+        $cmdList += '    $ktcmd = "ktpass /out " + $keyTabPath + " /mapuser " + $HTTPsamName + " /princ " + $httpSPN + "@" + $krbRealm + " /crypto all /pass """ + $HTTPPassword + """ /ptype KRB5_NT_PRINCIPAL /kvno 0 /mapop add +setpass +setupn "'
         $cmdList += '}'
-        $cmdList += '$errorActionPreference = "SilentlyContinue"'
-        $cmdList += '$ktcmdOut = Invoke-Expression $ktcmd'
-        $cmdList += '$errorActionPreference = "Continue"'
-        $cmdList += 'if($LASTEXITCODE -eq 0) {'
-        $cmdList += '    $msg = "The HTTP keytab ($keyTabPath) was successfully created." '
-        $cmdList += '    foreach($l in $ktcmdOut) {'
-        $cmdList += '        $msg += "`n      $l"'
+        $cmdList += 'try {'
+        $cmdList += '    $ktcmdOut = cmd /c "$ktcmd 1>&2" 2>&1 | %{ "$_" }'
+        $cmdList += '    if($LASTEXITCODE -eq 0) {'
+        $cmdList += '        $msg = "The HTTP keytab ($keyTabPath) was successfully created." '
+        $cmdList += '        foreach($l in $ktcmdOut) {'
+        $cmdList += '            $msg += "`n      $l"'
+        $cmdList += '        }'
+        $cmdList += '        $READMEtxt += $msg' + " `n"
+        $cmdList += '        Write-SASUserMessage -severity "alert" -message $msg'
+        $cmdList += '    } else {'
+        $cmdList += '        $msg = "The HTTP keytab creation FAILED.  Command executed: $ktcmd" '
+        $cmdList += '        foreach($l in $ktcmdOut) {'
+        $cmdList += '            $msg += "`n      $l"'
+        $cmdList += '        }'
+        $cmdList += '        $READMEtxt += $msg' + " `n"
+        $cmdList += '        Write-SASUserMessage -severity "error" -message "The creation of the HTTP keytab failed!`n$msg "'
         $cmdList += '    }'
-        $cmdList += '    $READMEtxt += $msg' + " `n"
-        $cmdList += '    Write-SASUserMessage -severity "alert" -message $msg'
-        $cmdList += '} else {'
-        $cmdList += '    $msg = "The HTTP keytab creation FAILED." '
-        $cmdList += '    foreach($l in $ktcmdOut) {'
-        $cmdList += '        $msg += "`n      $l"'
-        $cmdList += '    }'
-        $cmdList += '    $READMEtxt += $msg' + " `n"
-        $cmdList += '    Write-SASUserMessage -severity "error" -message "The creation of the HTTP keytab failed!"'
+        $cmdList += '} catch {'
+        $cmdList += '    $e=$error[0]'
+        $cmdList += '    Write-SASUserMessage -severity "error" -message "ktpass command is: $ktcmd" '
+        $cmdList += '    Write-SASUserMessage -severity "error" -message "Exception Message: $($e.toString())" '
         $cmdList += '}'
+
         if ($cmdFileOnly) {
             # Append content to command file
             $script:cmdFileContent = $script:cmdFileContent + "# Generate a keytab for the HTTP/ SPN.  +randpass is used.`n# SAS Viya requires that the HTTP SPN have a properly configured keytab.`n# Provide this keytab to the SAS Viya Administrator.`n"
