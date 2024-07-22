@@ -1,5 +1,7 @@
 # SAS Viya Deployment Assistant for Windows (sas-wvda.ps1)
 
+**Archived project: This project is no longer under active development and was archived on 2024-07-22.**
+
 ## Purpose
 To ease the installation process of SAS Viya 3.4 and Viya 3.5 on Microsoft Windows Server by:
 * Validating pre-requisites are meet
